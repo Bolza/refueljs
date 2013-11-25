@@ -1,6 +1,16 @@
 (function() {
-	var config = window['Refuel'] ? Refuel.config : {};
+	var config = {
+		basePath: '/',
+		requireFilePath: 'lib/require.min.js',
+		libs: {
+			Path: 'lib/path.min.js',
+			Hammer: 'lib/hammer.min.js',
+			polyfills: 'lib/polyfills.min.js'
+		},
+		autoObserve: true
+	}
 	window.Refuel = window['Refuel'] || {};
+	Refuel.config = Refuel.config || config; //overwrite not merge
 	var classMap = {};
 	var defaultClassName = '_Refuel-default-start-class';
 	Refuel.classMap = classMap;
@@ -9,20 +19,30 @@
 		return Array.prototype.slice.call(args);
 	}
 
-	Refuel.mix = function(base, argumenting) {
+	Refuel.mix = function(base, argumenting, _n) {
 		//var res = Refuel.clone(base);
 		var res = {};
+		var recursionLimit = 10;
+		_n = _n || 0;
 		for (var prop in base) {
 			res[prop] = base[prop];
 		}
 		for (var prop in argumenting) {
-			res[prop] = argumenting[prop];
+			if (Refuel.isObject(res[prop]) && _n <= recursionLimit) {
+				res[prop] = Refuel.mix(res[prop], argumenting[prop], _n++);
+			}
+			else {
+				res[prop] = argumenting[prop];
+			}
 		}
 		return res;
 	}
 
 	Refuel.isArray = function(target) {
-		return target.toString() === '[object Array]';
+		return Object.prototype.toString.call(target) === '[object Array]';
+	}
+	Refuel.isObject = function(target) {
+		return Object.prototype.toString.call(target) === '[object Object]';
 	}
 	Refuel.isUndefined = function(target) {
 		return typeof(target) === 'undefined';
@@ -169,36 +189,49 @@
 	Refuel.static = function(className, body) {
 		Refuel[className] = body();
 	}
-	
+
+	Refuel.callOnLoaded = function(path, callback) {
+		var node = document.createElement('script');
+		node.type = 'text/javascript';
+     	node.charset = 'utf-8';
+     	node.async = true;
+ 		node.addEventListener('load', callback, false);
+ 		node.src = path;
+ 		var head = document.querySelector('head');
+ 		head.appendChild(node);
+		return node;
+	}
+
+	var userDefinedModules;
  	var head = document.querySelector('head');
- 	var script = head.querySelector('script[data-rf-startup]'); 
- 	var node = document.createElement('script');
+ 	var script = head.querySelector('script[data-rf-startup]');
+ 	var userModulesElement = head.querySelector('script[data-rf-confmodules]');
+ 	var node;
+
+
+ 	if (userModulesElement) {
+	 	userDefinedModules = userModulesElement.getAttribute('data-rf-confmodules');
+ 	}
 	//var path = window.location.pathname;
 	if (script) {
 	 	var startupModule = script.getAttribute('data-rf-startup');
 	 	var startupPath = startupModule.split('/');
 	 	startupModule = startupPath[startupPath.length-1];
 		startupPath = startupPath.slice(0,startupPath.length-1).join('/') || '.';
-	 	//path = script.getAttribute('src').split('/');
-	 	//path = path.slice(0,path.length-1).join('/');
 	}
 
  	if (typeof define == 'undefined') {
-     	node.type = 'text/javascript';
-     	node.charset = 'utf-8';
-     	node.async = true;
- 		node.addEventListener('load', onScriptLoad, false);
- 		node.src = Refuel.config.requireFilePath;
- 		head.appendChild(node);
+ 		node = Refuel.callOnLoaded(Refuel.config.requireFilePath, onScriptLoad);
  	} else {
 		startApplication();
  	}
 
 	function onScriptLoad(e) {
 		if(e && e.type === 'load') {
-			console.log(node.src, 'loaded!');
+			console.log(e.target.src, 'loaded!');
 			e.target.parentNode.removeChild(e.target);
 			startApplication();
+			//Refuel.callOnLoaded('js/xrayquire.js', function(){});
 		}
 	}
 	function startApplication() {
@@ -213,10 +246,19 @@
 
 		Refuel.config = Refuel.mix(baseConfig, Refuel.config);
       	require.config(Refuel.config);
+      	/*
       	for (var lib in Refuel.config.libs) {
       		if (!window[lib]) startupRequirements.push(Refuel.config.libs[lib]);
+      	}*/
+		
+
+      	if(userDefinedModules) {
+      		startupRequirements.push(userDefinedModules);	
+      	} 
+      	else {
+      		if (!Refuel.config.modules) startupRequirements.push('config.modules');	
       	}
-      	if (!Refuel.config.modules) startupRequirements.push('config.modules');
+      	
       	require(startupRequirements, function() {
       		try {
 				Path.listen();

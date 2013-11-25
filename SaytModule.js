@@ -36,7 +36,6 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
                 this.dataSource.subscribe('dataAvailable', function(data) {
                     this.notify('loadComplete');
                     this.draw();
-                    this.notify('drawComplete');
                 }, this);
                 this.dataSource.init(config);
             }
@@ -81,7 +80,7 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
                             }
                         break;
                     }
-                    if (config.keySelectionInsideInput) 
+                    if (config.keySelectionInsideInput && theList.selectedIndex) 
                         inputField.value = theList.items[theList.selectedIndex].data[config.primaryField];
 
                 });
@@ -127,6 +126,7 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
 
             //theList.toggleClass('show', data.length);
             data.length ? this.show() : this.hide();
+            this.notify('drawComplete');
         }
 
         function handleTyping(e) {
@@ -135,6 +135,9 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
             if (query != this.currentQuery ) {
                 if (searchTimeout) window.clearTimeout(searchTimeout);
                 searchTimeout = window.setTimeout(startSearch.bind(this, query),config.delay);
+            }
+            else {
+                this.show();
             }
         }
 
@@ -145,13 +148,13 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
         function startSearch(query) {
             //console.log('start sayt search', query);
             if (searchTimeout) window.clearTimeout(searchTimeout);
-            theList.template.clear();
+            lastQuery = this.currentQuery;
             if (query.length === 0) {
                 this.hide();
             }
             else if (query.length >= config.minChars) {
-                lastQuery = this.currentQuery;
                 this.currentQuery = query;
+                theList.template.clear();
                 this.dataSource.load({'params': config.searchParam+'='+query});
             }
         }

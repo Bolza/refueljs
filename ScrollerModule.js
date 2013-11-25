@@ -29,11 +29,7 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 			rootDOMElement = config.rootDOMElement;
 			if (!rootDOMElement && config.rootId) rootDOMElement = document.querySelector("#"+config.rootId); 
 			resetElement();
-			
-			docHeight = element.getBoundingClientRect().height;
-			pagHeight = rootDOMElement.getBoundingClientRect().height;
-			
-			if (config.scrollBar) createScrollbar(element);
+			update();
 			//attach events
 			defaultEvents.forEach(function(ev) {
 				element.addEventListener(ev, handleEvent, false);
@@ -135,7 +131,8 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 		
 		function update() {
 			docHeight = element.getBoundingClientRect().height;
-			pagHeight = rootDOMElement.getBoundingClientRect().height;
+			pagHeight = rootDOMElement.getBoundingClientRect().height - config.topMargin;
+			//console.log('docHeight, pagHeight',docHeight, pagHeight);
 			if (scrollBar) createScrollbar();
 		};
 		
@@ -155,7 +152,6 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 			startTime = Number( new Date() );
 			delta = 0;
 			e.stopPropagation();
-// 			e.preventDefault();
 		};
 		
 		function onTouchMove(e) {
@@ -179,13 +175,23 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 			applyStyle(element, 'transform', 'translate3d(0,' + newY + 'px,0)');			
 			scrollBarMove(newY);
 			//block event here
-			//e.stopPropagation();
 			moveArray.push(newY);
 		};
 		
 		function applyStyle(dom, name, value) {
 			var atr = Modernizr.prefixed(name);
+			
+			if (Modernizr.Detectizr.device.browser == 'firefox') {
+				name = cap(name)
+				atr = 'Moz'+name
+			}
+			
 			dom.style[atr] = value;
+			
+		}
+		function cap(string)
+		{
+		    return string.charAt(0).toUpperCase() + string.slice(1);
 		}
 
 		function onTouchEnd(e) {
@@ -198,7 +204,6 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 
 			v >= 8? v=4: ""; 
 			v < -8? v=-4: "";
-
 			var height = element.offsetHeight - rootDOMElement.offsetHeight;
 			var elementHeight = -height;
 			var eventType;
@@ -211,6 +216,8 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 					applyStyle(element, 'transform', 'translate3d(0,' + (elong) + 'px,0)');
 					applyStyle(element, 'transition',  elong + 'ms linear');					
 					scrollBarEnd(elong);
+					
+					fixToUpperBound();
 					eventType = 'upperBoundReached';
 					
 				}//check lower bound
@@ -219,6 +226,8 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 					applyStyle(element, 'transform', tvalue);
 					applyStyle(element, 'transition',  elong + 'ms linear');	
 					scrollBarEnd(-(height + elong));
+					
+					fixToLowerBound();
 					eventType = 'lowerBoundReached';
 				}
 				else {
@@ -229,18 +238,13 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 			}
 			else {
 				if ((newY > 0) || (height < 0)) {
-					//fix position at upper bound
 					fixToUpperBound();
-					//block event here
-					e.stopPropagation();
+					//e.stopPropagation();
 					return;
 				}
 				if ((Math.abs(newY) >= Math.abs(height))) {
-					//fix position at lower bound
-
 					fixToLowerBound(elementHeight);
-					//block event here
-					e.stopPropagation();
+					//e.stopPropagation();
 					return;
 				}
 				if (scrollBar) scrollBar.style.display = "none";	
@@ -248,7 +252,7 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 			oldDelta = 0;
 			//set the new starting point
 			index = newY;
-			e.stopPropagation();
+			//e.stopPropagation();
 			if (eventType) this.notify(eventType, {y: index});
 		};
 		
@@ -264,8 +268,9 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 			index = 0;
 		};
 		
-		function fixToLowerBound(elementHeight){
-			var tvalue = 'translate3d(0,' + (elementHeight - config.topMargin) + 'px,0)';
+		function fixToLowerBound(){
+			var elementHeight = -docHeight + pagHeight;
+			var tvalue = 'translate3d(0,' + (elementHeight) + 'px,0)'; // - config.topMargin
 			applyStyle(element, 'transform', tvalue);
 			tvalue = config.inertia + 'ms cubic-bezier(0, 0, 0, 1)';
 			applyStyle(element, 'transition', tvalue);			

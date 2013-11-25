@@ -6,6 +6,7 @@ Refuel.static('ajax',
 			enabled: false
 		}
 		var config = {
+			'callerModule': this,
 		    mimeType: 'json',
 		    headers: {
 				'Content-Type': 'application/json',
@@ -53,12 +54,16 @@ Refuel.static('ajax',
 				responseText: "",
 				responseJSON: {}
 			};
-			if (callLog[url] <= 2){
-				options.timeout *= 1.5;
-				ajax(url, options);
-			} else {
+			if (options.retryTimes) {
+				var tempDelay = options.retryDelay;
+				options.retryTimes -= 1;
+				options.retryDelay += options.retryDelayIncrease;
+				options.timeout += options.retryTimeoutIncrease;
+				setTimeout(function(){ajax(url, options)}, tempDelay);
+			} 
+			else {
 				callLog[url].counter = 0;
-				options[options.timeout ? 'timeoutCallback' : 'errorCallback'](resp, 0, xhr);
+				options[options.timeout ? 'timeoutCallback' : 'errorCallback'].call(options.callerModule, resp, 0, xhr);
 				options._genericCallback(resp, null, xhr, 'timeout');
 			}
 		}
@@ -71,7 +76,8 @@ Refuel.static('ajax',
 			var method = options.method ? options.method : "GET";
 			var headers, timeout;
 			options.timeout = options.timeout || 60000;
-
+			//console.log('timeout',url,options.timeout);
+			
 			timeout = setTimeout(function(xhr, url, options){
 				return function timeoutHandler(){
 					killAjaxCall(xhr, url, options);
@@ -100,23 +106,22 @@ Refuel.static('ajax',
 					};
 					//MIME TYPE CONVERSION
 					//dataType (default: Intelligent Guess (xml, json, script, or html))
-					var type = 'timeout';
 					if (resp.responseText) {
 						try {
 							switch(options.mimeType) {
 								case 'json':
-									resp.responseJSON = JSON.parse(resp.responseText) || {};	
+									resp.responseJSON = JSON.parse(resp.responseText) || {};	
 								break;
 							}
 						}
 						catch (e) {
 							console.error("Parsing Error in responseText", resp);
 							type = 'error';
-							//throw "Parsing Error [responseText] in "+url;
 						}
 					}
 
 					var allowed = false;
+					var type = 'timeout';
 					if (options.allowedStatus) {
 						allowed = options.allowedStatus.indexOf(status) > -1 ? true : false;
 					}
@@ -126,8 +131,8 @@ Refuel.static('ajax',
 						type = 'error';
 					}
 					options._genericCallback(resp, status, xhr, type);
-					if (type === 'success')	options.successCallback(resp, status, xhr);
-					else if (type === 'error')	options.errorCallback(resp, status, xhr);
+					if (type === 'success')	options.successCallback.call(options.callerModule, resp, status, xhr);
+					else if (type === 'error')	options.errorCallback.call(options.callerModule, resp, status, xhr);
 				}
 			};
 			var params = options.params;

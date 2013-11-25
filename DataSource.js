@@ -18,6 +18,7 @@ Refuel.define('DataSource', {inherits: 'Events'},
 			currentXHR = null;
 
 		var config = {
+				'callerModule': this,
 				'defaultDataType': 'Object',
 				'dataPath': null,
 				'successCallback': successCallback.bind(this),
@@ -320,6 +321,4 @@ Refuel.define('DataSource', {inherits: 'Events'},
 			}
 			return facade;
 		}
-
-
     });

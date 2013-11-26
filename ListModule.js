@@ -56,20 +56,19 @@ Refuel.define('ListModule',{inherits: 'AbstractModule', require:'ListItemModule'
                 this.items[index].select();
             }
         }
-        /*
-        this.remove = function(objData) {
-            var index = this.getItemIndex(objData);
-            this.removeAt(index);
+        
+        this.remove = function(listItem) {
+            this.removeAt(this.getItemIndex(listItem));
         }
-        */
+        
         this.removeAt = function(index) {
             this.data.splice(index, 1);    
         }
 
         this.removeByFilter = function(filterObj) {
             var todelete = this.filterBy(filterObj);
-            for (var i=0, item; item = this.data[i]; i++) {
-                this.removeAt(this.getItemIndex(item));
+            for (var i=0, item; item = todelete[i]; i++) {
+                this.removeAt(this.getItemIndexByData(item));
             }
         }
 
@@ -142,15 +141,21 @@ Refuel.define('ListModule',{inherits: 'AbstractModule', require:'ListItemModule'
             }
         }
 
+
+        this.getItemIndex = function(listItem) {
+            for (var i = 0, curItem; curItem = this.items[i]; i++) {
+                if (curItem === listItem) return i;
+            };
+            return null;
+        }
         //XXX this returns index of DATA not ITEM
-        this.getItemIndex = function(item) {
+        this.getItemIndexByData = function(itemData) {
             for (var i = 0, curItem; curItem = this.data[i]; i++) {
-                if (curItem === item) return i;
+                if (curItem === itemData) return i;
             };
             return null;
         }
 
-        //XXX this is filtering DATA not ITEM
         this.filterBy = function(filterObj) {
             if (!this.data) return [];
             return this.data.filter(function(item, index, array) {

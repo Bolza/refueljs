@@ -147,8 +147,10 @@ Refuel.define('Template',{inherits: 'Events'}, function Template() {
 					target.dataset['rfAction'] || target.dataset['rfActionClick'] : 
 					target.getAttribute(markupActionPrefix + e.type)
 			    );
-			    e = splitOptions(e, e.action);
-			   	self.bindingsProxy.notify('_generic_binder_event', e);
+			    if (e.action) {
+				    e = splitOptions(e, e.action);
+				   	self.bindingsProxy.notify('_generic_binder_event', e);
+			    }
 			}
 		}
 
@@ -332,12 +334,11 @@ Refuel.define('Template',{inherits: 'Events'}, function Template() {
 			var path = normalizePath(symbol.linkedTo);
 			var linkedData = Refuel.resolveChain(path, data);
 			if (symbol.expression) linkedData = evalExpression(symbol.expression, data);
-
 			//console.log('renderSymbol',path, symbol.linkedTo, linkedData);
 			switch(symbol.action) {
 				case 'replaceText': 
 					markMissing(symbol, linkedData);
-					symbol.textNode.textContent = symbol.originalContent.replace(symbol.originalSymbol, linkedData || '');
+					symbol.textNode.textContent = symbol.originalContent.replace(symbol.originalSymbol, linkedData) ;
 				break;
 				
 				case 'replaceAttributeValue':
@@ -348,7 +349,7 @@ Refuel.define('Template',{inherits: 'Events'}, function Template() {
 							symbol.domElement[symbol.attributeName] = linkedData == true;
 						break;
 						case 'data-src':
-							var src = symbol.originalContent.replace(symbol.originalSymbol, linkedData || '');
+							var src = symbol.originalContent.replace(symbol.originalSymbol, linkedData);
 							symbol.domElement.removeAttribute('data-src');
 							symbol.domElement.setAttribute('src', src);
 						break;

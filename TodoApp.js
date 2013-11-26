@@ -1,4 +1,4 @@
-var app;
+var app, td;
 Refuel.define('TodoApp',{require: ['GenericModule', 'ListModule']},
     function TodoApp() {    
         var rootElement = document.querySelector('#todoapp');
@@ -15,7 +15,7 @@ Refuel.define('TodoApp',{require: ['GenericModule', 'ListModule']},
             } 
         });
 
-        var todoListModule = app.getModule('todoList');       
+        var todoListModule = td = app.getModule('todoList');       
         checkCounters();
         app.subscribe('observableChange', function(e) {
             var name = e.observable.name;

@@ -33,7 +33,27 @@ arguments)}});if(A&&(x=w.head=document.getElementsByTagName("head")[0],D=documen
 h.attachEvent&&!(h.attachEvent.toString&&0>h.attachEvent.toString().indexOf("[native code"))&&!Y?(O=!0,h.attachEvent("onreadystatechange",b.onScriptLoad)):(h.addEventListener("load",b.onScriptLoad,!1),h.addEventListener("error",b.onScriptError,!1)),h.src=d,K=h,D?x.insertBefore(h,D):x.appendChild(h),K=null,h;if(da)try{importScripts(d),b.completeLoad(c)}catch(j){b.onError(B("importscripts","importScripts failed for "+c+" at "+d,j,[c]))}};A&&M(document.getElementsByTagName("script"),function(b){x||(x=
 b.parentNode);if(t=b.getAttribute("data-main"))return r.baseUrl||(E=t.split("/"),Q=E.pop(),fa=E.length?E.join("/")+"/":"./",r.baseUrl=fa,t=Q),t=t.replace(ea,""),r.deps=r.deps?r.deps.concat(t):[t],!0});define=function(b,c,d){var l,h;"string"!==typeof b&&(d=c,c=b,b=null);J(c)||(d=c,c=[]);!c.length&&I(d)&&d.length&&(d.toString().replace(la,"").replace(ma,function(b,d){c.push(d)}),c=(1===d.length?["require"]:["require","exports","module"]).concat(c));if(O){if(!(l=K))P&&"interactive"===P.readyState||M(document.getElementsByTagName("script"),
 function(b){if("interactive"===b.readyState)return P=b}),l=P;l&&(b||(b=l.getAttribute("data-requiremodule")),h=F[l.getAttribute("data-requirecontext")])}(h?h.defQueue:T).push([b,c,d])};define.amd={jQuery:!0};l.exec=function(b){return eval(b)};l(r)}})(this);
-
+Refuel = {
+	config: {
+		basePath: '/refueljs/',
+		requireFilePath: '/refueljs/lib/require.min.js',
+		waitSeconds: 200,
+		skipDataMain: true,
+		deps: ['Modernizr', 'Path', 'Hammer','polyfills'],
+		paths: {
+			'Modernizr': '//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min',
+			'Path': '/refueljs/lib/path.min',
+			'Hammer': '/refueljs/lib/hammer.min',
+			'polyfills': '/refueljs/lib/polyfills.min'
+		},
+		shim: {
+			'Detectizr': {
+				deps: ['Modernizr']
+			}
+		},
+		autoObserve: true
+	}
+};
 Refuel.config.modules = {
 	'generic': {
 		className: 'GenericModule'
@@ -78,20 +98,30 @@ Refuel.config.modules = {
 		return Array.prototype.slice.call(args);
 	}
 
-	Refuel.mix = function(base, argumenting) {
+	Refuel.mix = function(base, argumenting, _n) {
 		//var res = Refuel.clone(base);
 		var res = {};
+		var recursionLimit = 10;
+		_n = _n || 0;
 		for (var prop in base) {
 			res[prop] = base[prop];
 		}
 		for (var prop in argumenting) {
-			res[prop] = argumenting[prop];
+			if (Refuel.isObject(res[prop]) && _n <= recursionLimit) {
+				res[prop] = Refuel.mix(res[prop], argumenting[prop], _n++);
+			}
+			else {
+				res[prop] = argumenting[prop];
+			}
 		}
 		return res;
 	}
 
 	Refuel.isArray = function(target) {
 		return Object.prototype.toString.call(target) === '[object Array]';
+	}
+	Refuel.isObject = function(target) {
+		return Object.prototype.toString.call(target) === '[object Object]';
 	}
 	Refuel.isUndefined = function(target) {
 		return typeof(target) === 'undefined';
@@ -238,11 +268,26 @@ Refuel.config.modules = {
 	Refuel.static = function(className, body) {
 		Refuel[className] = body();
 	}
+
+	Refuel.callOnLoaded = function(path, callback) {
+		var node = document.createElement('script');
+		node.type = 'text/javascript';
+     	node.charset = 'utf-8';
+     	node.async = true;
+ 		node.addEventListener('load', callback, false);
+ 		node.src = path;
+ 		var head = document.querySelector('head');
+ 		head.appendChild(node);
+		return node;
+	}
+
 	var userDefinedModules;
  	var head = document.querySelector('head');
  	var script = head.querySelector('script[data-rf-startup]');
  	var userModulesElement = head.querySelector('script[data-rf-confmodules]');
- 	var node = document.createElement('script');
+ 	var node;
+
+
  	if (userModulesElement) {
 	 	userDefinedModules = userModulesElement.getAttribute('data-rf-confmodules');
  	}
@@ -255,21 +300,17 @@ Refuel.config.modules = {
 	}
 
  	if (typeof define == 'undefined') {
-     	node.type = 'text/javascript';
-     	node.charset = 'utf-8';
-     	node.async = true;
- 		node.addEventListener('load', onScriptLoad, false);
- 		node.src = Refuel.config.requireFilePath;
- 		head.appendChild(node);
+ 		node = Refuel.callOnLoaded(Refuel.config.requireFilePath, onScriptLoad);
  	} else {
 		startApplication();
  	}
 
 	function onScriptLoad(e) {
 		if(e && e.type === 'load') {
-			console.log(node.src, 'loaded!');
+			console.log(e.target.src, 'loaded!');
 			e.target.parentNode.removeChild(e.target);
 			startApplication();
+			//Refuel.callOnLoaded('js/xrayquire.js', function(){});
 		}
 	}
 	function startApplication() {
@@ -284,9 +325,11 @@ Refuel.config.modules = {
 
 		Refuel.config = Refuel.mix(baseConfig, Refuel.config);
       	require.config(Refuel.config);
+      	/*
       	for (var lib in Refuel.config.libs) {
       		if (!window[lib]) startupRequirements.push(Refuel.config.libs[lib]);
-      	}
+      	}*/
+		
 
       	if(userDefinedModules) {
       		startupRequirements.push(userDefinedModules);	
@@ -495,8 +538,7 @@ Refuel.static('ajax',
 			}
 		}
 		
-});
-/**
+});/**
 *   @class Events
 *
 *   @author Matteo Burgassi
@@ -1206,8 +1248,10 @@ Refuel.define('Template',{inherits: 'Events'}, function Template() {
 					target.dataset['rfAction'] || target.dataset['rfActionClick'] : 
 					target.getAttribute(markupActionPrefix + e.type)
 			    );
-			    e = splitOptions(e, e.action);
-			   	self.bindingsProxy.notify('_generic_binder_event', e);
+			    if (e.action) {
+				    e = splitOptions(e, e.action);
+				   	self.bindingsProxy.notify('_generic_binder_event', e);
+			    }
 			}
 		}
 
@@ -1391,12 +1435,11 @@ Refuel.define('Template',{inherits: 'Events'}, function Template() {
 			var path = normalizePath(symbol.linkedTo);
 			var linkedData = Refuel.resolveChain(path, data);
 			if (symbol.expression) linkedData = evalExpression(symbol.expression, data);
-
 			//console.log('renderSymbol',path, symbol.linkedTo, linkedData);
 			switch(symbol.action) {
 				case 'replaceText': 
 					markMissing(symbol, linkedData);
-					symbol.textNode.textContent = symbol.originalContent.replace(symbol.originalSymbol, linkedData || '');
+					symbol.textNode.textContent = symbol.originalContent.replace(symbol.originalSymbol, linkedData) ;
 				break;
 				
 				case 'replaceAttributeValue':
@@ -1407,7 +1450,7 @@ Refuel.define('Template',{inherits: 'Events'}, function Template() {
 							symbol.domElement[symbol.attributeName] = linkedData == true;
 						break;
 						case 'data-src':
-							var src = symbol.originalContent.replace(symbol.originalSymbol, linkedData || '');
+							var src = symbol.originalContent.replace(symbol.originalSymbol, linkedData);
 							symbol.domElement.removeAttribute('data-src');
 							symbol.domElement.setAttribute('src', src);
 						break;
@@ -1784,9 +1827,6 @@ Refuel.define('DataSource', {inherits: 'Events'},
 					},
 					"put": function(body) {
 						Refuel.ajax.put(url, body, config);
-					},
-					"delete": function() {
-						Refuel.ajax.delete(url, config);
 					}
 				}
 			 }
@@ -1842,7 +1882,6 @@ Refuel.define('GenericModule',{inherits: 'AbstractModule'},
                     //console.log(config.dataLabel, Refuel.refuelClass(this),'got all data (dataAvailable), now he can draw()');
                     this.notify('loadComplete');
                     this.draw();
-                    //this.notify('drawComplete');
                 }, this);
                 this.dataSource.init(config);
             }
@@ -1867,14 +1906,11 @@ Refuel.define('ListModule',{inherits: 'AbstractModule', require:'ListItemModule'
         this.init = function(myConfig) {
             config = Refuel.mix(config, myConfig);  
             delete config['data'];
-            this.selectedIndex = -1;
-
-            //XXX shouldnt auto-detect type?   
+            this.selectedIndex = -1;   
             this.dataSource.setConfig({defaultDataType: 'Array'});
-
             this.defineUpdateManager(oa_update.bind(this));
             if (config.root) this.template.setRoot(config.root);
-
+            this.template.parseTemplate();        
 
             if (this.dataSource) {
                 //console.log(config.dataLabel+' ('+Refuel.refuelClass(this)+') have dataSource and is waiting for data...');
@@ -1882,9 +1918,8 @@ Refuel.define('ListModule',{inherits: 'AbstractModule', require:'ListItemModule'
                     if (config.maxLength && e.data.length > config.maxLength) this.data = e.data.slice(0, config.maxLength);
                     //console.log(this.dataLabel,'got all data ',this.data,', now can draw()');
                     this.notify('loadComplete');
-                    this.draw();
                     set.call(this);
-                    //this.notify('drawComplete');
+                    this.draw();
                 }, this);
                 this.dataSource.init(config);    
             }
@@ -1910,20 +1945,19 @@ Refuel.define('ListModule',{inherits: 'AbstractModule', require:'ListItemModule'
                 this.items[index].select();
             }
         }
-        /*
-        this.remove = function(objData) {
-            var index = this.getItemIndex(objData);
-            this.removeAt(index);
+        
+        this.remove = function(listItem) {
+            this.removeAt(this.getItemIndex(listItem));
         }
-        */
+        
         this.removeAt = function(index) {
             this.data.splice(index, 1);    
         }
 
         this.removeByFilter = function(filterObj) {
             var todelete = this.filterBy(filterObj);
-            for (var i=0, item; item = this.data[i]; i++) {
-                this.removeAt(this.getItemIndex(item));
+            for (var i=0, item; item = todelete[i]; i++) {
+                this.removeAt(this.getItemIndexByData(item));
             }
         }
 
@@ -1996,15 +2030,21 @@ Refuel.define('ListModule',{inherits: 'AbstractModule', require:'ListItemModule'
             }
         }
 
+
+        this.getItemIndex = function(listItem) {
+            for (var i = 0, curItem; curItem = this.items[i]; i++) {
+                if (curItem === listItem) return i;
+            };
+            return null;
+        }
         //XXX this returns index of DATA not ITEM
-        this.getItemIndex = function(item) {
+        this.getItemIndexByData = function(itemData) {
             for (var i = 0, curItem; curItem = this.data[i]; i++) {
-                if (curItem === item) return i;
+                if (curItem === itemData) return i;
             };
             return null;
         }
 
-        //XXX this is filtering DATA not ITEM
         this.filterBy = function(filterObj) {
             if (!this.data) return [];
             return this.data.filter(function(item, index, array) {
@@ -2051,7 +2091,6 @@ Refuel.define('ListItemModule', {inherits: 'AbstractModule'},
                     //console.log(Refuel.refuelClass(this),'got all data (dataAvailable), now he can draw()');
                     this.notify('loadComplete');
                     this.draw();
-                    //this.notify('drawComplete');
                 }, this);
                 this.dataSource.init(config);    
             }
@@ -2119,7 +2158,6 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
                 this.dataSource.subscribe('dataAvailable', function(data) {
                     this.notify('loadComplete');
                     this.draw();
-                    //this.notify('drawComplete');
                 }, this);
                 this.dataSource.init(config);
             }
@@ -2410,7 +2448,6 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 			startTime = Number( new Date() );
 			delta = 0;
 			e.stopPropagation();
-// 			e.preventDefault();
 		};
 		
 		function onTouchMove(e) {
@@ -2434,13 +2471,23 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 			applyStyle(element, 'transform', 'translate3d(0,' + newY + 'px,0)');			
 			scrollBarMove(newY);
 			//block event here
-			//e.stopPropagation();
 			moveArray.push(newY);
 		};
 		
 		function applyStyle(dom, name, value) {
 			var atr = Modernizr.prefixed(name);
+			
+			if (Modernizr.Detectizr.device.browser == 'firefox') {
+				name = cap(name)
+				atr = 'Moz'+name
+			}
+			
 			dom.style[atr] = value;
+			
+		}
+		function cap(string)
+		{
+		    return string.charAt(0).toUpperCase() + string.slice(1);
 		}
 
 		function onTouchEnd(e) {
@@ -2462,7 +2509,6 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 				
 				//check upper bound
 				if (newY > 0) {
-					//console.log('1');
 					applyStyle(element, 'transform', 'translate3d(0,' + (elong) + 'px,0)');
 					applyStyle(element, 'transition',  elong + 'ms linear');					
 					scrollBarEnd(elong);
@@ -2472,7 +2518,6 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 					
 				}//check lower bound
 				else if ((Math.abs(newY) >= Math.abs(height))) {
-					//console.log('2');
 					var tvalue = 'translate3d(0,' + (-(height + elong)) + 'px,0)';
 					applyStyle(element, 'transform', tvalue);
 					applyStyle(element, 'transition',  elong + 'ms linear');	
@@ -2482,7 +2527,6 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 					eventType = 'lowerBoundReached';
 				}
 				else {
-					//console.log('3');
 					moveTo(newY);
 					scrollBarEnd(newY);
 					eventType = 'movedTo';
@@ -2490,15 +2534,13 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 			}
 			else {
 				if ((newY > 0) || (height < 0)) {
-					//console.log('4');
 					fixToUpperBound();
-					e.stopPropagation();
+					//e.stopPropagation();
 					return;
 				}
 				if ((Math.abs(newY) >= Math.abs(height))) {
-					//console.log('5');
 					fixToLowerBound(elementHeight);
-					e.stopPropagation();
+					//e.stopPropagation();
 					return;
 				}
 				if (scrollBar) scrollBar.style.display = "none";	
@@ -2506,7 +2548,7 @@ Refuel.define('ScrollerModule', {inherits: 'Events'},
 			oldDelta = 0;
 			//set the new starting point
 			index = newY;
-			e.stopPropagation();
+			//e.stopPropagation();
 			if (eventType) this.notify(eventType, {y: index});
 		};
 		

@@ -13,17 +13,12 @@ module.exports = function(grunt) {
         separator: ''
       },
       dist: {
-          src: ['<%= dirs.libs %>/require.min.js', '<%= dirs.refuel %>/config.js', '<%= dirs.refuel %>/config.modules.js','<%= dirs.refuel %>/Refuel.js','<%= dirs.refuel %>/config.modules.js','<%= dirs.refuel %>/ajax.js','<%= dirs.refuel %>/Events.js','<%= dirs.refuel %>/AbstractModule.js','<%= dirs.refuel %>/ObservableArray.js','<%= dirs.refuel %>/Observer.js','<%= dirs.refuel %>/Template.js','<%= dirs.refuel %>/DataSource.js','<%= dirs.refuel %>/GenericModule.js','<%= dirs.refuel %>/ListModule.js','<%= dirs.refuel %>/ListItemModule.js','<%= dirs.refuel %>/SaytModule.js','<%= dirs.refuel %>/ScrollerModule.js'],    
-          dest: 'refuel.build.js'
-      }
-    },
-    
-    uglify: {
-      dist: {
           src: [
-          '<%= dirs.libs %>/require.min.js',
+          '<%= dirs.libs %>/polyfills.min.js',
+          '<%= dirs.libs %>/require.min.js', 
           '<%= dirs.refuel %>/config.modules.js',
           '<%= dirs.refuel %>/Refuel.js',
+          '<%= dirs.refuel %>/config.modules.js',
           '<%= dirs.refuel %>/ajax.js',
           '<%= dirs.refuel %>/Events.js',
           '<%= dirs.refuel %>/AbstractModule.js',
@@ -35,7 +30,15 @@ module.exports = function(grunt) {
           '<%= dirs.refuel %>/ListModule.js',
           '<%= dirs.refuel %>/ListItemModule.js',
           '<%= dirs.refuel %>/SaytModule.js',
-          '<%= dirs.refuel %>/ScrollerModule.js'
+          '<%= dirs.refuel %>/ScrollerModule.js'],    
+          dest: 'refuel.build.js'
+      }
+    },
+    
+    uglify: {
+      dist: {
+          src: [
+            'refuel.build.js'
           ]
           ,dest: 'refuel.min.js'
       }

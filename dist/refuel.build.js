@@ -1,4 +1,6 @@
-/*
+/*! @source http://purl.eligrey.com/github/classList.js/blob/master/classList.js*/
+if(typeof document!=="undefined"&&!("classList" in document.createElement("a"))){(function(j){if(!("HTMLElement" in j)&&!("Element" in j)){return}var a="classList",f="prototype",m=(j.HTMLElement||j.Element)[f],b=Object,k=String[f].trim||function(){return this.replace(/^\s+|\s+$/g,"")},c=Array[f].indexOf||function(q){var p=0,o=this.length;for(;p<o;p++){if(p in this&&this[p]===q){return p}}return -1},n=function(o,p){this.name=o;this.code=DOMException[o];this.message=p},g=function(p,o){if(o===""){throw new n("SYNTAX_ERR","An invalid or illegal string was specified")}if(/\s/.test(o)){throw new n("INVALID_CHARACTER_ERR","String contains an invalid character")}return c.call(p,o)},d=function(s){var r=k.call(s.className),q=r?r.split(/\s+/):[],p=0,o=q.length;for(;p<o;p++){this.push(q[p])}this._updateClassName=function(){s.className=this.toString()}},e=d[f]=[],i=function(){return new d(this)};n[f]=Error[f];e.item=function(o){return this[o]||null};e.contains=function(o){o+="";return g(this,o)!==-1};e.add=function(){var s=arguments,r=0,p=s.length,q,o=false;do{q=s[r]+"";if(g(this,q)===-1){this.push(q);o=true}}while(++r<p);if(o){this._updateClassName()}};e.remove=function(){var t=arguments,s=0,p=t.length,r,o=false;do{r=t[s]+"";var q=g(this,r);if(q!==-1){this.splice(q,1);o=true}}while(++s<p);if(o){this._updateClassName()}};e.toggle=function(p,q){p+="";var o=this.contains(p),r=o?q!==true&&"remove":q!==false&&"add";if(r){this[r](p)}return !o};e.toString=function(){return this.join(" ")};if(b.defineProperty){var l={get:i,enumerable:true,configurable:true};try{b.defineProperty(m,a,l)}catch(h){if(h.number===-2146823252){l.enumerable=false;b.defineProperty(m,a,l)}}}else{if(b[f].__defineGetter__){m.__defineGetter__(a,i)}}}(self))};
+Refuel.polyfills = true;/*
  RequireJS 2.1.5 Copyright (c) 2010-2012, The Dojo Foundation All Rights Reserved.
  Available via the MIT or new BSD license.
  see: http://github.com/jrburke/requirejs for details
@@ -33,27 +35,7 @@ arguments)}});if(A&&(x=w.head=document.getElementsByTagName("head")[0],D=documen
 h.attachEvent&&!(h.attachEvent.toString&&0>h.attachEvent.toString().indexOf("[native code"))&&!Y?(O=!0,h.attachEvent("onreadystatechange",b.onScriptLoad)):(h.addEventListener("load",b.onScriptLoad,!1),h.addEventListener("error",b.onScriptError,!1)),h.src=d,K=h,D?x.insertBefore(h,D):x.appendChild(h),K=null,h;if(da)try{importScripts(d),b.completeLoad(c)}catch(j){b.onError(B("importscripts","importScripts failed for "+c+" at "+d,j,[c]))}};A&&M(document.getElementsByTagName("script"),function(b){x||(x=
 b.parentNode);if(t=b.getAttribute("data-main"))return r.baseUrl||(E=t.split("/"),Q=E.pop(),fa=E.length?E.join("/")+"/":"./",r.baseUrl=fa,t=Q),t=t.replace(ea,""),r.deps=r.deps?r.deps.concat(t):[t],!0});define=function(b,c,d){var l,h;"string"!==typeof b&&(d=c,c=b,b=null);J(c)||(d=c,c=[]);!c.length&&I(d)&&d.length&&(d.toString().replace(la,"").replace(ma,function(b,d){c.push(d)}),c=(1===d.length?["require"]:["require","exports","module"]).concat(c));if(O){if(!(l=K))P&&"interactive"===P.readyState||M(document.getElementsByTagName("script"),
 function(b){if("interactive"===b.readyState)return P=b}),l=P;l&&(b||(b=l.getAttribute("data-requiremodule")),h=F[l.getAttribute("data-requirecontext")])}(h?h.defQueue:T).push([b,c,d])};define.amd={jQuery:!0};l.exec=function(b){return eval(b)};l(r)}})(this);
-Refuel = {
-	config: {
-		basePath: '/refueljs/',
-		requireFilePath: '/refueljs/lib/require.min.js',
-		waitSeconds: 200,
-		skipDataMain: true,
-		deps: ['Modernizr', 'Path', 'Hammer','polyfills'],
-		paths: {
-			'Modernizr': '//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min',
-			'Path': '/refueljs/lib/path.min',
-			'Hammer': '/refueljs/lib/hammer.min',
-			'polyfills': '/refueljs/lib/polyfills.min'
-		},
-		shim: {
-			'Detectizr': {
-				deps: ['Modernizr']
-			}
-		},
-		autoObserve: true
-	}
-};
+
 Refuel.config.modules = {
 	'generic': {
 		className: 'GenericModule'
@@ -78,21 +60,13 @@ Refuel.config.modules = {
 	}
 };
 (function() {
-	var config = {
-		basePath: '/',
-		requireFilePath: 'lib/require.min.js',
-		libs: {
-			Path: 'lib/path.min.js',
-			Hammer: 'lib/hammer.min.js',
-			polyfills: 'lib/polyfills.min.js'
-		},
-		autoObserve: true
-	}
+
 	window.Refuel = window['Refuel'] || {};
 	Refuel.config = Refuel.config || config; //overwrite not merge
 	var classMap = {};
 	var defaultClassName = '_Refuel-default-start-class';
 	Refuel.classMap = classMap;
+	var _pageParams;
 
 	function argumentsToArray(args){
 		return Array.prototype.slice.call(args);
@@ -126,20 +100,51 @@ Refuel.config.modules = {
 	Refuel.isUndefined = function(target) {
 		return typeof(target) === 'undefined';
 	}
-	
-    Refuel.getCookie = function(name) {
-	    var cookieValue = null;
-	    if (document.cookie && document.cookie != '') {
-		var cookies = document.cookie.split(';');
-		for (var i = 0; i < cookies.length; i++) {
-		    var cookie = cookies[i].trim();
-		    if (cookie.substring(0, name.length + 1) == (name + '=')) {
-			cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-			break;
-		    }
+
+	function _getPageParams() {
+		var _params = location.search.replace('?', '');
+		_params = _params.split('&');
+		var params = {};
+		for (var i=0, c; c = _params[i]; i++) {
+		    c = c.split('=');
+		    params[c[0]] = c[1];
 		}
+		return params;
+    }
+
+	Object.defineProperty(Refuel, "pageParams", {
+	    get: function() {
+	    	if (!_pageParams) _pageParams = _getPageParams(); 
+	    	return _pageParams; 
 	    }
-	    return cookieValue;
+	});
+
+	Refuel.cookie = {
+		set: function(c_name, value, days, domain) {
+			if (!days) days=7;
+			domain = domain ?  "; domain=" + domain : "";
+			var date = new Date(), expires;
+			date.setTime(date.getTime()+(days*24*60*60*1000));
+			expires = "; expires=" + date.toGMTString();
+			document.cookie = c_name + "=" + value + expires + "; path=/" + domain; 
+		},
+		remove: function(c_name) {
+			document.cookie = c_name +'=; expires=Thu, 01-Jan-70 00:00:01 GMT;';
+		},
+		get: function(c_name) {
+			var i,x,y,ARRcookies=document.cookie.split(";");
+			y = null;
+			for (i=0;i<ARRcookies.length;i++) {
+				x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+				y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+				x=x.replace(/^\s+|\s+$/g,"");
+				if (x==c_name) {
+					if (typeof(y) === 'undefined' || y == false) return null;
+					else return unescape(y);
+				}
+			}
+			return null;
+		}
 	}
 
 	Refuel.clone = function(obj) {
@@ -291,6 +296,7 @@ Refuel.config.modules = {
  	if (userModulesElement) {
 	 	userDefinedModules = userModulesElement.getAttribute('data-rf-confmodules');
  	}
+
 	//var path = window.location.pathname;
 	if (script) {
 	 	var startupModule = script.getAttribute('data-rf-startup');
@@ -319,17 +325,13 @@ Refuel.config.modules = {
 		baseConfig.baseUrl = Refuel.config.basePath;//path;
 		var startupRequirements = [];
 		if (startupModule) {
-			baseConfig.paths[startupModule] = location.pathname+startupPath+'/'+startupModule;
+			startupModule = startupModule.replace('.js', '');
+			baseConfig.paths[startupModule] = startupModule;
 			startupRequirements.push(startupModule);
 		} 
 
 		Refuel.config = Refuel.mix(baseConfig, Refuel.config);
       	require.config(Refuel.config);
-      	/*
-      	for (var lib in Refuel.config.libs) {
-      		if (!window[lib]) startupRequirements.push(Refuel.config.libs[lib]);
-      	}*/
-		
 
       	if(userDefinedModules) {
       		startupRequirements.push(userDefinedModules);	
@@ -337,7 +339,6 @@ Refuel.config.modules = {
       	else {
       		if (!Refuel.config.modules) startupRequirements.push('config.modules');	
       	}
-      	
       	require(startupRequirements, function() {
       		try {
 				Path.listen();

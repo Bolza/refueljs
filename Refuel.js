@@ -1,19 +1,11 @@
 (function() {
-	var config = {
-		basePath: '/',
-		requireFilePath: 'lib/require.min.js',
-		libs: {
-			Path: 'lib/path.min.js',
-			Hammer: 'lib/hammer.min.js',
-			polyfills: 'lib/polyfills.min.js'
-		},
-		autoObserve: true
-	}
+
 	window.Refuel = window['Refuel'] || {};
 	Refuel.config = Refuel.config || config; //overwrite not merge
 	var classMap = {};
 	var defaultClassName = '_Refuel-default-start-class';
 	Refuel.classMap = classMap;
+	var _pageParams;
 
 	function argumentsToArray(args){
 		return Array.prototype.slice.call(args);
@@ -47,20 +39,51 @@
 	Refuel.isUndefined = function(target) {
 		return typeof(target) === 'undefined';
 	}
-	
-    Refuel.getCookie = function(name) {
-	    var cookieValue = null;
-	    if (document.cookie && document.cookie != '') {
-		var cookies = document.cookie.split(';');
-		for (var i = 0; i < cookies.length; i++) {
-		    var cookie = cookies[i].trim();
-		    if (cookie.substring(0, name.length + 1) == (name + '=')) {
-			cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-			break;
-		    }
+
+	function _getPageParams() {
+		var _params = location.search.replace('?', '');
+		_params = _params.split('&');
+		var params = {};
+		for (var i=0, c; c = _params[i]; i++) {
+		    c = c.split('=');
+		    params[c[0]] = c[1];
 		}
+		return params;
+    }
+
+	Object.defineProperty(Refuel, "pageParams", {
+	    get: function() {
+	    	if (!_pageParams) _pageParams = _getPageParams(); 
+	    	return _pageParams; 
 	    }
-	    return cookieValue;
+	});
+
+	Refuel.cookie = {
+		set: function(c_name, value, days, domain) {
+			if (!days) days=7;
+			domain = domain ?  "; domain=" + domain : "";
+			var date = new Date(), expires;
+			date.setTime(date.getTime()+(days*24*60*60*1000));
+			expires = "; expires=" + date.toGMTString();
+			document.cookie = c_name + "=" + value + expires + "; path=/" + domain; 
+		},
+		remove: function(c_name) {
+			document.cookie = c_name +'=; expires=Thu, 01-Jan-70 00:00:01 GMT;';
+		},
+		get: function(c_name) {
+			var i,x,y,ARRcookies=document.cookie.split(";");
+			y = null;
+			for (i=0;i<ARRcookies.length;i++) {
+				x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+				y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+				x=x.replace(/^\s+|\s+$/g,"");
+				if (x==c_name) {
+					if (typeof(y) === 'undefined' || y == false) return null;
+					else return unescape(y);
+				}
+			}
+			return null;
+		}
 	}
 
 	Refuel.clone = function(obj) {
@@ -212,6 +235,7 @@
  	if (userModulesElement) {
 	 	userDefinedModules = userModulesElement.getAttribute('data-rf-confmodules');
  	}
+
 	//var path = window.location.pathname;
 	if (script) {
 	 	var startupModule = script.getAttribute('data-rf-startup');
@@ -240,17 +264,13 @@
 		baseConfig.baseUrl = Refuel.config.basePath;//path;
 		var startupRequirements = [];
 		if (startupModule) {
-			baseConfig.paths[startupModule] = location.pathname+startupPath+'/'+startupModule;
+			startupModule = startupModule.replace('.js', '');
+			baseConfig.paths[startupModule] = startupModule;
 			startupRequirements.push(startupModule);
 		} 
 
 		Refuel.config = Refuel.mix(baseConfig, Refuel.config);
       	require.config(Refuel.config);
-      	/*
-      	for (var lib in Refuel.config.libs) {
-      		if (!window[lib]) startupRequirements.push(Refuel.config.libs[lib]);
-      	}*/
-		
 
       	if(userDefinedModules) {
       		startupRequirements.push(userDefinedModules);	
@@ -258,7 +278,6 @@
       	else {
       		if (!Refuel.config.modules) startupRequirements.push('config.modules');	
       	}
-      	
       	require(startupRequirements, function() {
       		try {
 				Path.listen();

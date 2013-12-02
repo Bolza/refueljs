@@ -131,10 +131,13 @@ Refuel.define('AbstractModule', {require: ['Template', 'DataSource'], inherits: 
 
             //XXX dataAvaiable when module.data changes, use updater
             this.dataSource.subscribe('dataAvailable', function(e) {
-                if (module.dataLabel && this.data[module.dataLabel]) {
-                    module.data = this.data[module.dataLabel];
+                for (var modname in self.items) {
+                    var mod = self.items[modname];
+                    if (self.data[modname]) {
+                        mod.data = self.data[modname];
+                    }
                 }
-            }, this);
+            });
             
         }
         

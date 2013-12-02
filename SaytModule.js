@@ -29,8 +29,14 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
             delete config['data'];
             
             if (config.root) this.template.setRoot(config.root);
-            this.template.subscribe('parsingComplete', create, this);
-            this.template.parseTemplate();
+
+            if (!this.elements.length) {
+                this.template.subscribe('parsingComplete', create, this);
+                this.template.parseTemplate();
+            }
+            else {
+                create.call(this);
+            }
             
             if (this.dataSource) {
                 this.dataSource.subscribe('dataAvailable', function(data) {

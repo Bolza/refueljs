@@ -757,10 +757,13 @@ Refuel.define('AbstractModule', {require: ['Template', 'DataSource'], inherits: 
 
             //XXX dataAvaiable when module.data changes, use updater
             this.dataSource.subscribe('dataAvailable', function(e) {
-                if (module.dataLabel && this.data[module.dataLabel]) {
-                    module.data = this.data[module.dataLabel];
+                for (var modname in self.items) {
+                    var mod = self.items[modname];
+                    if (self.data[modname]) {
+                        mod.data = self.data[modname];
+                    }
                 }
-            }, this);
+            });
             
         }
         
@@ -2012,6 +2015,7 @@ Refuel.define('ListModule',{inherits: 'AbstractModule', require:'ListItemModule'
         function addListItem(obj) {
             var rowStyle = getElementStyle.call(this);
             if (this.elements['template']) this.elements['template'].removeAttribute('data-rf-template');
+            else console.log(this.elements['template']);
             var listItem = Refuel.newModule('ListItemModule', { 
                 parentRoot: config.root, 
                 template: this.elements['template'],
@@ -2152,8 +2156,14 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
             delete config['data'];
             
             if (config.root) this.template.setRoot(config.root);
-            this.template.subscribe('parsingComplete', create, this);
-            this.template.parseTemplate();
+
+            if (!this.elements.length) {
+                this.template.subscribe('parsingComplete', create, this);
+                this.template.parseTemplate();
+            }
+            else {
+                create.call(this);
+            }
             
             if (this.dataSource) {
                 this.dataSource.subscribe('dataAvailable', function(data) {
@@ -2170,6 +2180,7 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
             inputField = this.elements['inputField'];
             resultList = this.elements['resultList'];
             listItemTemplate = this.elements['listItemTemplate'];
+            //console.log('listItemTemplate', this.elements);
             inputField.addEventListener('keyup', handleTyping.bind(this));
             inputField.addEventListener('blur', function() { self.hide(); });
             inputField.addEventListener('focus', function() { self.show(); });
@@ -2222,8 +2233,10 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
             }
             */
             //if ListModule is defined inside markup
-            theList = this.getModulesByClass('ListModule')[0];
-            //if ListModule is not already defined
+            //theList = this.getModulesByClass('ListModule')[0];
+            //console.log(theList.template);
+            //debugger;
+            ////if ListModule is not already defined
             if (!theList) {
                 theList = Refuel.newModule('ListModule', {
                     'root': resultList,
@@ -2236,7 +2249,7 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
             }
             this.hide();
             //XXX why?
-            theList.template.parseTemplate();
+            //theList.template.parseTemplate();
         }
 
         this.draw = function(data) {

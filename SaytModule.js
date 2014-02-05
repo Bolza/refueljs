@@ -53,6 +53,7 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
             inputField = this.elements['inputField'];
             resultList = this.elements['resultList'];
             listItemTemplate = this.elements['listItemTemplate'];
+            //console.log('listItemTemplate', this.elements);
             inputField.addEventListener('keyup', handleTyping.bind(this));
             inputField.addEventListener('blur', function() { self.hide(); });
             inputField.addEventListener('focus', function() { self.show(); });
@@ -105,8 +106,11 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
             }
             */
             //if ListModule is defined inside markup
-            theList = this.getModulesByClass('ListModule')[0];
-            //if ListModule is not already defined
+            //theList = this.getModulesByClass('ListModule')[0];
+            
+
+            ////if ListModule is not already defined
+            //FIXX we create the List ANYWAY
             if (!theList) {
                 theList = Refuel.newModule('ListModule', {
                     'root': resultList,
@@ -117,9 +121,6 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
                 });
                 this.addModule(theList);
             }
-            this.hide();
-            //XXX why?
-            theList.template.parseTemplate();
         }
 
         this.draw = function(data) {

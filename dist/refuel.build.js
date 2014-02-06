@@ -636,6 +636,7 @@ Refuel.define('AbstractModule', {require: ['Template', 'DataSource'], inherits: 
     function AbstractModule() {
         var actionMap = {};
         this.items = {};
+        var self = this;
         /**
         * @type {object}
         * @property {string} dataPath 
@@ -688,7 +689,7 @@ Refuel.define('AbstractModule', {require: ['Template', 'DataSource'], inherits: 
             path = path.join('.');
             if (path && config.datapath) console.error(label,'error. dataPath defined twice');
 
-            //console.log(this.dataLabel,'creates a Submodule',module.className,'with data', symbol.linkedTo);
+            console.log(this.dataLabel,'creates a Submodule',module.className,'with data', symbol.linkedTo);
             //dataLabel collega i dati del parent
             var defaultSubmoduleConfig = {
                 autoload: false
@@ -1339,11 +1340,11 @@ Refuel.define('Template',{inherits: 'Events'}, function Template() {
 			var isRoot = node === root;
 			//Sets the style class to the root element
 			if (isRoot && config.styleClass) root.classList.add(config.styleClass);
-
 			switch (node.nodeType){
 				case 1:
 					//FIXME alcuni symbol vengono parsati a doppio, perchè vengono trattati sia nel 
 					//	generic che nella root del modulo controllare che non vengano anche agganciati doppi eventi
+					if (node.hasAttribute('debugger')) debugger;
 					var parsedAttributes = parseDOMElement(node, symbolTable, regExpToMatchName, regExpToMatchValue);
 
 					var moduleObj = null;
@@ -1914,7 +1915,7 @@ Refuel.define('ListModule',{inherits: 'AbstractModule', require:'ListItemModule'
             this.dataSource.setConfig({defaultDataType: 'Array'});
             this.defineUpdateManager(oa_update.bind(this));
             if (config.root) this.template.setRoot(config.root);
-            this.template.parseTemplate();        
+            this.template.parseTemplate();
 
             if (this.dataSource) {
                 //console.log(config.dataLabel+' ('+Refuel.refuelClass(this)+') have dataSource and is waiting for data...');
@@ -2234,9 +2235,10 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
             */
             //if ListModule is defined inside markup
             //theList = this.getModulesByClass('ListModule')[0];
-            //console.log(theList.template);
-            //debugger;
+            
+
             ////if ListModule is not already defined
+            //FIXX we create the List ANYWAY
             if (!theList) {
                 theList = Refuel.newModule('ListModule', {
                     'root': resultList,
@@ -2247,9 +2249,6 @@ Refuel.define('SaytModule', {inherits: 'GenericModule', require: ['ListModule']}
                 });
                 this.addModule(theList);
             }
-            this.hide();
-            //XXX why?
-            //theList.template.parseTemplate();
         }
 
         this.draw = function(data) {

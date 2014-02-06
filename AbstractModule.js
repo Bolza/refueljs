@@ -10,6 +10,7 @@ Refuel.define('AbstractModule', {require: ['Template', 'DataSource'], inherits: 
     function AbstractModule() {
         var actionMap = {};
         this.items = {};
+        var self = this;
         /**
         * @type {object}
         * @property {string} dataPath 
@@ -62,7 +63,7 @@ Refuel.define('AbstractModule', {require: ['Template', 'DataSource'], inherits: 
             path = path.join('.');
             if (path && config.datapath) console.error(label,'error. dataPath defined twice');
 
-            //console.log(this.dataLabel,'creates a Submodule',module.className,'with data', symbol.linkedTo);
+            console.log(this.dataLabel,'creates a Submodule',module.className,'with data', symbol.linkedTo);
             //dataLabel collega i dati del parent
             var defaultSubmoduleConfig = {
                 autoload: false
